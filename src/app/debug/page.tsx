@@ -5,12 +5,12 @@ export default async function DebugPage() {
   const reqHeaders = await headers();
   
   let session = null;
-  let error = null;
+  let error: Error | null = null;
   
   try {
     session = await auth.api.getSession({ headers: reqHeaders });
   } catch (e) {
-    error = e;
+    error = e instanceof Error ? e : new Error(String(e));
   }
 
   return (
