@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import {
   getAuthenticatedUser,
   getUserRepos,
@@ -15,10 +16,14 @@ export default async function DashboardPage() {
   const reqHeaders = await headers();
   const session = await auth.api.getSession({ headers: reqHeaders });
 
-  if (!session) return null;
+  if (!session) {
+    redirect("/");
+  }
 
   const ghUser = await getAuthenticatedUser();
-  if (!ghUser) return null;
+  if (!ghUser) {
+    redirect("/");
+  }
   const username = ghUser.login;
 
   const [reviewRequests, myOpenPRs, myIssues, repos, notifications, contributions, activity, trending] =
