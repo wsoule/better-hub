@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn, formatNumber } from "@/lib/utils";
 import type { CommitActivityWeek, CheckStatus, CheckRun } from "@/lib/github";
-import { GitPullRequest, CircleDot, Star, GitFork, Eye, MessageSquare, CheckCircle2, XCircle, Clock, Pin, GitCommit, Link2, X } from "lucide-react";
+import { GitPullRequest, CircleDot, MessageSquare, XCircle, Pin, GitCommit, Link2, X } from "lucide-react";
 import { CheckStatusBadge } from "@/components/pr/check-status-badge";
 import { unpinFromOverview } from "@/app/(app)/repos/[owner]/[repo]/pin-actions";
 import type { PinnedItem } from "@/lib/pinned-items-store";
@@ -1079,60 +1079,10 @@ export function RepoOverview({
 
 	const hotItems = isMaintainer ? computeHotItems(openPRs, openIssues, base) : [];
 
-	const statsRow = (
-		<div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-			{[
-				{
-					icon: Star,
-					label: "Stars",
-					value: formatNumber(repoData.stargazers_count ?? 0),
-				},
-				{
-					icon: GitFork,
-					label: "Forks",
-					value: formatNumber(repoData.forks_count ?? 0),
-				},
-				{
-					icon: Eye,
-					label: "Watchers",
-					value: formatNumber(
-						repoData.subscribers_count ??
-							repoData.watchers_count ??
-							0,
-					),
-				},
-				{
-					icon: GitPullRequest,
-					label: "Open PRs",
-					value: formatNumber(openPRCount ?? openPRs.length),
-				},
-				{
-					icon: CircleDot,
-					label: "Open Issues",
-					value: formatNumber(openIssueCount ?? openIssues.length),
-				},
-			].map((stat) => (
-				<div
-					key={stat.label}
-					className="flex flex-col gap-1 px-3 py-2.5 rounded-lg bg-muted/25"
-				>
-					<span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/60 flex items-center gap-1.5">
-						<stat.icon className="w-3 h-3" />
-						{stat.label}
-					</span>
-					<span className="text-sm font-medium tabular-nums text-foreground/80">
-						{stat.value}
-					</span>
-				</div>
-			))}
-		</div>
-	);
-
 	if (isMaintainer) {
 		return (
 			<div className="flex flex-col gap-4 lg:flex-1 lg:min-h-0 pb-4">
 				<div className="shrink-0 flex flex-col gap-4">
-					{statsRow}
 					{ciStatus && ciStatus.total > 0 && (
 						<CIStatusCard
 							ciStatus={ciStatus}
@@ -1200,57 +1150,9 @@ export function RepoOverview({
 	// Non-maintainer view
 	return (
 		<div className="space-y-4 pb-4">
-			{/* Stats */}
-			<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-				{[
-					{
-						icon: Star,
-						label: "Stars",
-						value: formatNumber(repoData.stargazers_count ?? 0),
-					},
-					{
-						icon: GitFork,
-						label: "Forks",
-						value: formatNumber(repoData.forks_count ?? 0),
-					},
-					{
-						icon: Eye,
-						label: "Watchers",
-						value: formatNumber(
-							repoData.subscribers_count ??
-								repoData.watchers_count ??
-								0,
-						),
-					},
-					{
-						icon: CircleDot,
-						label: "Open Issues",
-						value: formatNumber(openIssues.length),
-					},
-				].map((stat) => (
-					<div
-						key={stat.label}
-						className="flex flex-col gap-1 px-3 py-2.5 rounded-lg bg-muted/25"
-					>
-						<span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/60 flex items-center gap-1.5">
-							<stat.icon className="w-3 h-3" />
-							{stat.label}
-						</span>
-						<span className="text-sm font-medium tabular-nums text-foreground/80">
-							{stat.value}
-						</span>
-					</div>
-				))}
-			</div>
-
 			{/* README */}
 			{readmeSlot && (
 				<div className="rounded-lg bg-muted/20 overflow-hidden">
-					<div className="px-4 py-2 border-b border-border/20">
-						<span className="text-[11px] font-mono text-muted-foreground/60">
-							README.md
-						</span>
-					</div>
 					<div className="px-6 py-5">{readmeSlot}</div>
 				</div>
 			)}

@@ -6,6 +6,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeStringify from "rehype-stringify";
 import { highlightCode } from "@/lib/shiki";
 import { toInternalUrl } from "@/lib/github-utils";
+import { MarkdownCopyHandler } from "@/components/shared/markdown-copy-handler";
 
 interface RepoContext {
 	owner: string;
@@ -213,18 +214,116 @@ function markBadgeParagraphs(html: string): string {
 	);
 }
 
+interface PkgVariant {
+	label: string;
+	command: string;
+}
+
+function getInstallVariants(code: string): PkgVariant[] | null {
+	const trimmed = code.trim();
+	// Only single-line install commands
+	if (trimmed.includes("\n")) return null;
+
+	// Strip optional leading $ or >
+	const line = trimmed.replace(/^[$>]\s+/, "");
+
+	// npx command
+	if (/^npx\s+/.test(line)) {
+		const args = line.replace(/^npx\s+/, "");
+		return [
+			{ label: "npm", command: `npx ${args}` },
+			{ label: "yarn", command: `yarn dlx ${args}` },
+			{ label: "pnpm", command: `pnpm dlx ${args}` },
+			{ label: "bun", command: `bunx ${args}` },
+		];
+	}
+
+	// npm install / npm i / npm add
+	const match = line.match(/^npm\s+(?:install|i|add)(\s+.*)?$/);
+	if (!match) return null;
+
+	const rest = (match[1] || "").trim();
+
+	if (!rest) {
+		return [
+			{ label: "npm", command: "npm install" },
+			{ label: "yarn", command: "yarn" },
+			{ label: "pnpm", command: "pnpm install" },
+			{ label: "bun", command: "bun install" },
+		];
+	}
+
+	const isGlobal = /(?:^|\s)(-g|--global)(?:\s|$)/.test(rest);
+	const isDev = /(?:^|\s)(-D|--save-dev)(?:\s|$)/.test(rest);
+	const packages = rest.replace(/(-g|--global|-D|--save-dev)\s*/g, "").trim();
+
+	if (isGlobal) {
+		return [
+			{ label: "npm", command: `npm install -g ${packages}` },
+			{ label: "yarn", command: `yarn global add ${packages}` },
+			{ label: "pnpm", command: `pnpm add -g ${packages}` },
+			{ label: "bun", command: `bun add -g ${packages}` },
+		];
+	}
+
+	if (isDev) {
+		return [
+			{ label: "npm", command: `npm install -D ${packages}` },
+			{ label: "yarn", command: `yarn add -D ${packages}` },
+			{ label: "pnpm", command: `pnpm add -D ${packages}` },
+			{ label: "bun", command: `bun add -D ${packages}` },
+		];
+	}
+
+	return [
+		{ label: "npm", command: `npm install ${packages}` },
+		{ label: "yarn", command: `yarn add ${packages}` },
+		{ label: "pnpm", command: `pnpm add ${packages}` },
+		{ label: "bun", command: `bun add ${packages}` },
+	];
+}
+
+function escapeHtml(str: string): string {
+	return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function buildInstallTabsHtml(variants: PkgVariant[], id: number): string {
+	const name = `pkgtab-${id}`;
+	let html = '<div class="ghmd-pkg-tabs">';
+	// Tab row: inputs + labels + trailing border fill
+	for (let i = 0; i < variants.length; i++) {
+		const rid = `${name}-${i}`;
+		html += `<input type="radio" name="${name}" id="${rid}"${i === 0 ? " checked" : ""}>`;
+		html += `<label for="${rid}">${variants[i].label}</label>`;
+	}
+	html += '<span class="ghmd-pkg-fill"></span>';
+	// Panels with copy button
+	for (let i = 0; i < variants.length; i++) {
+		const cmd = escapeHtml(variants[i].command);
+		html += `<div class="ghmd-pkg-panel"><code>${cmd}</code><button class="ghmd-pkg-copy" data-copy="${cmd}" title="Copy to clipboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>`;
+	}
+	html += "</div>";
+	return html;
+}
+
 export async function renderMarkdownToHtml(
 	content: string,
 	repoContext?: RepoContext,
 	issueRefContext?: { owner: string; repo: string },
 ): Promise<string> {
 	const codeBlocks: { code: string; lang: string; id: number }[] = [];
+	const installBlocks: { id: number; html: string }[] = [];
 	let blockId = 0;
 
 	const processed = content.replace(
 		/```([\w+#.-]*)\n([\s\S]*?)```/g,
 		(_match, lang, code) => {
 			const id = blockId++;
+			const variants = getInstallVariants(code.trimEnd());
+			if (variants) {
+				installBlocks.push({ id, html: buildInstallTabsHtml(variants, id) });
+				return `<div data-install-block="${id}"></div>`;
+			}
 			codeBlocks.push({ code: code.trimEnd(), lang: lang || "text", id });
 			return `<div data-code-block="${id}"></div>`;
 		},
@@ -249,6 +348,10 @@ export async function renderMarkdownToHtml(
 
 	for (const block of renderedBlocks) {
 		html = html.replace(`<div data-code-block="${block.id}"></div>`, block.html);
+	}
+
+	for (const block of installBlocks) {
+		html = html.replace(`<div data-install-block="${block.id}"></div>`, block.html);
 	}
 
 	html = processAlerts(html);
@@ -299,9 +402,11 @@ export async function MarkdownRenderer({
 	const html = await renderMarkdownToHtml(content, repoContext, issueRefContext);
 
 	return (
-		<div
-			className={`ghmd ${className || ""}`}
-			dangerouslySetInnerHTML={{ __html: html }}
-		/>
+		<MarkdownCopyHandler>
+			<div
+				className={`ghmd ${className || ""}`}
+				dangerouslySetInnerHTML={{ __html: html }}
+			/>
+		</MarkdownCopyHandler>
 	);
 }

@@ -494,14 +494,14 @@ function Stat({
 		<div
 			className={cn(
 				"stat-card relative overflow-hidden rounded-lg px-3 py-3",
-				"border border-foreground/[0.06]",
-				"bg-gradient-to-br from-foreground/[0.04] via-foreground/[0.02] to-transparent",
+				"border border-black/[0.04] dark:border-white/[0.06]",
+				"bg-gradient-to-br from-black/[0.02] via-black/[0.01] to-transparent dark:from-white/[0.04] dark:via-white/[0.02] dark:to-transparent",
 			)}
 		>
 			{/* Noise texture */}
-			<div className="pointer-events-none absolute inset-0 stat-noise opacity-[0.4] dark:opacity-[0.5] mix-blend-overlay" />
+			<div className="pointer-events-none absolute inset-0 stat-noise opacity-[0.25] dark:opacity-[0.5] mix-blend-overlay" />
 			{/* Diagonal shine */}
-			<div className="pointer-events-none absolute -inset-1/2 w-[200%] h-[200%] rotate-12 bg-gradient-to-br from-transparent via-foreground/[0.03] to-transparent translate-x-[-30%] translate-y-[-10%]" />
+			<div className="pointer-events-none absolute -inset-1/2 w-[200%] h-[200%] rotate-12 bg-gradient-to-br from-transparent via-white/[0.5] dark:via-white/[0.03] to-transparent translate-x-[-30%] translate-y-[-10%]" />
 			<div className="relative flex flex-col gap-1.5">
 				<div className="flex items-center gap-1.5">
 					<span className={cn(accent ? "text-foreground/60" : "text-muted-foreground/40")}>

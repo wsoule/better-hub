@@ -1035,25 +1035,17 @@ async function processGitDataSyncJob(
 		case "authenticated_user": {
 			const auKey = buildAuthenticatedUserCacheKey();
 			const auCached = await getGithubCacheEntry(authCtx.userId, auKey);
-			try {
-				const resp = await authCtx.octokit.users.getAuthenticated({
-					headers: auCached?.etag
-						? { "If-None-Match": auCached.etag }
-						: {},
-				});
+			const auResp = await ghConditionalGet(authCtx.token, "/user", auCached?.etag ?? null);
+			if (auResp.notModified) {
+				await touchGithubCacheEntrySyncedAt(authCtx.userId, auKey);
+			} else {
 				await upsertGithubCacheEntry(
 					authCtx.userId,
 					auKey,
 					"authenticated_user",
-					resp.data,
-					resp.headers?.etag ?? null,
+					auResp.data,
+					auResp.etag ?? null,
 				);
-			} catch (e: unknown) {
-				if (isOctokitNotModified(e)) {
-					await touchGithubCacheEntrySyncedAt(authCtx.userId, auKey);
-					return;
-				}
-				throw e;
 			}
 			return;
 		}
@@ -1204,26 +1196,17 @@ async function processGitDataSyncJob(
 			if (!payload.username) return;
 			const upKey = buildUserProfileCacheKey(payload.username);
 			const upCached = await getGithubCacheEntry(authCtx.userId, upKey);
-			try {
-				const resp = await authCtx.octokit.users.getByUsername({
-					username: payload.username,
-					headers: upCached?.etag
-						? { "If-None-Match": upCached.etag }
-						: {},
-				});
+			const upResp = await ghConditionalGet(authCtx.token, `/users/${payload.username}`, upCached?.etag ?? null);
+			if (upResp.notModified) {
+				await touchGithubCacheEntrySyncedAt(authCtx.userId, upKey);
+			} else {
 				await upsertGithubCacheEntry(
 					authCtx.userId,
 					upKey,
 					"user_profile",
-					resp.data,
-					resp.headers?.etag ?? null,
+					upResp.data,
+					upResp.etag ?? null,
 				);
-			} catch (e: unknown) {
-				if (isOctokitNotModified(e)) {
-					await touchGithubCacheEntrySyncedAt(authCtx.userId, upKey);
-					return;
-				}
-				throw e;
 			}
 			return;
 		}

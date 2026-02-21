@@ -223,7 +223,13 @@ export function RepoSidebar({
           >
             <GitFork className="w-3 h-3" />
             Fork
+            <span className="text-muted-foreground/50 tabular-nums">{formatNumber(forks)}</span>
           </a>
+          <span className="flex items-center justify-center gap-1.5 text-[11px] font-mono text-muted-foreground/60">
+            <Eye className="w-3 h-3" />
+            Watchers
+            <span className="tabular-nums">{formatNumber(watchers)}</span>
+          </span>
         </div>
 
         {/* Info */}
@@ -299,6 +305,7 @@ export function RepoSidebar({
             )}
           </div>
         </div>
+
 
         {/* Contributors */}
         {contributors.length > 0 && (

@@ -40,19 +40,23 @@ export default function RootLayout({
 						__html: generateThemeScript(listThemes()),
 					}}
 				/>
-				{process.env.NODE_ENV === "development" && (
+				{/* {process.env.NODE_ENV === "development" && (
 					<Script
 						src="//unpkg.com/react-grab/dist/index.global.js"
 						crossOrigin="anonymous"
 						strategy="beforeInteractive"
 					/>
-				)}
+				)} */}
 			</head>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} antialiased`}
 				suppressHydrationWarning
 			>
-				<ThemeProvider attribute="class" defaultTheme="dark" enableColorScheme={false}>
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="dark"
+					enableColorScheme={false}
+				>
 					{children}
 				</ThemeProvider>
 			</body>
