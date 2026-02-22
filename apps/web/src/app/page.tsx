@@ -101,8 +101,10 @@ export default async function HomePage() {
 						className="hero-in text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-foreground leading-[1.1] mb-2"
 						style={{ animationDelay: "0.4s" }}
 					>
-						Re-ima<span className="text-primary/80">i</span>nig
-						code
+						Re-imagining{" "}
+						<span className="text-white/80 font-mono">
+							code
+						</span>
 						<br />
 						collaboration.
 					</h1>
