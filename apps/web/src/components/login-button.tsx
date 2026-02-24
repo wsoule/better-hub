@@ -129,35 +129,39 @@ function InfoIcon({ className }: { className?: string }) {
 }
 
 function InfoPopover({ text, children }: { text: string; children: React.ReactNode }) {
-	const [open, setOpen] = useState(false);
-	const ref = useRef<HTMLDivElement>(null);
+	const [visible, setVisible] = useState(false);
 	const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 
 	const show = useCallback(() => {
 		clearTimeout(timeout.current);
-		setOpen(true);
+		timeout.current = setTimeout(() => setVisible(true), 400);
 	}, []);
 
 	const hide = useCallback(() => {
-		timeout.current = setTimeout(() => setOpen(false), 150);
+		clearTimeout(timeout.current);
+		setVisible(false);
 	}, []);
 
 	useEffect(() => () => clearTimeout(timeout.current), []);
 
 	return (
 		<div
-			ref={ref}
 			className="relative inline-flex"
 			onMouseEnter={show}
 			onMouseLeave={hide}
 		>
 			{children}
-			{open && (
-				<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 px-3 py-2 rounded-md bg-foreground text-background text-[11px] leading-relaxed shadow-lg z-50 pointer-events-none">
-					{text}
-					<div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-foreground" />
-				</div>
-			)}
+			<div
+				className={cn(
+					"absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 px-3 py-2 rounded-md bg-foreground text-background text-[11px] leading-relaxed shadow-lg z-50 pointer-events-none transition-all duration-200 ease-out",
+					visible
+						? "opacity-100 translate-y-0"
+						: "opacity-0 translate-y-1 pointer-events-none",
+				)}
+			>
+				{text}
+				<div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-foreground" />
+			</div>
 		</div>
 	);
 }
