@@ -56,49 +56,8 @@ export const auth = betterAuth({
 		github: {
 			clientId: process.env.GITHUB_CLIENT_ID!,
 			clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-			scope: [
-				"repo",
-				"repo:status",
-				"repo_deployment",
-				"public_repo",
-
-				"user",
-				"user:email",
-				"user:follow",
-
-				"admin:org",
-				"write:org",
-				"read:org",
-
-				"admin:repo_hook",
-				"write:repo_hook",
-				"read:repo_hook",
-
-				"admin:org_hook",
-
-				"gist",
-
-				"notifications",
-
-				"admin:gpg_key",
-				"write:gpg_key",
-				"read:gpg_key",
-
-				"write:discussion",
-				"read:discussion",
-
-				"security_events",
-
-				"workflow",
-				"read:project",
-				"write:project",
-				"admin:enterprise",
-				"manage_billing:enterprise",
-				"read:enterprise",
-				"read:audit_log",
-				"copilot",
-				"codespace",
-			],
+			// Minimal default — the sign-in UI lets users opt into more
+			scope: ["read:user", "user:email", "public_repo"],
 			async mapProfileToUser(profile) {
 				return {
 					githubLogin: profile.login,

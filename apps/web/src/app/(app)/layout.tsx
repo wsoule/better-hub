@@ -4,7 +4,9 @@ import { GlobalChatProvider } from "@/components/shared/global-chat-provider";
 import { GlobalChatPanel } from "@/components/shared/global-chat-panel";
 import { NavigationProgress } from "@/components/shared/navigation-progress";
 import { getServerSession } from "@/lib/auth";
+import { getNotifications } from "@/lib/github";
 import { type GhostTabState } from "@/lib/chat-store";
+import type { NotificationItem } from "@/lib/github-types";
 import { ColorThemeProvider } from "@/components/theme/theme-provider";
 import { CodeThemeProvider } from "@/components/theme/code-theme-provider";
 import { GitHubLinkInterceptor } from "@/components/shared/github-link-interceptor";
@@ -15,6 +17,8 @@ import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
 	const session = await getServerSession();
 	if (!session) return redirect("/");
+
+	const notifications = (await getNotifications(20)) as NotificationItem[];
 
 	const freshTabId = crypto.randomUUID();
 	const initialTabState: GhostTabState = {

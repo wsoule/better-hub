@@ -1,10 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, ExternalLink, Search } from "lucide-react";
+import {
+	LogOut,
+	ExternalLink,
+	Search,
+	Sun,
+	Moon,
+	User,
+	Command,
+	Settings,
+	Bell,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 
 const CommandMenu = dynamic(() => import("@/components/command-menu").then((m) => m.CommandMenu));
+import { useColorTheme } from "@/components/theme/theme-provider";
 import { signOut } from "@/lib/auth-client";
 import {
 	DropdownMenu,
@@ -12,6 +23,9 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
+	DropdownMenuShortcut,
+	DropdownMenuGroup,
+	DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { $Session } from "@/lib/auth";
 
@@ -20,6 +34,9 @@ interface AppNavbarProps {
 }
 
 export function AppNavbar({ session }: AppNavbarProps) {
+	const { mode, toggleMode } = useColorTheme();
+	const gh = session.githubUser;
+
 	return (
 		<header className="fixed top-0 h-10 flex w-full flex-col bg-background backdrop-blur-lg z-10">
 			<nav className="top-0 flex h-full items-center justify-between border-border px-2 sm:px-4 border-b">
@@ -66,96 +83,149 @@ export function AppNavbar({ session }: AppNavbarProps) {
 									}
 								>
 									<img
-										src={
-											session.user
-												.image
-										}
-										alt={
-											session.user
-												.name ||
-											"User avatar"
-										}
+										src={session.user.image}
+										alt={session.user.name || "User avatar"}
 										className="w-6 h-6 rounded-full border border-border/60 dark:border-white/8 group-hover:border-foreground/20 transition-colors"
 									/>
 								</button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent
 								align="end"
-								className="w-52"
+								className="w-64 p-0"
 							>
-								{/* Current user */}
-								<div className="px-2 py-1.5 flex items-center gap-2">
-									<img
-										src={
-											session.user
-												.image
-										}
-										alt=""
-										className="w-6 h-6 rounded-full shrink-0"
-									/>
-									<div className="flex flex-col min-w-0">
-										<span className="text-[11px] font-medium truncate">
-											{
-												session
-													.user
-													.name
-											}
-										</span>
+								{/* Profile card */}
+								<div className="px-3 py-3 bg-muted/30 dark:bg-white/[0.02]">
+									<div className="flex items-start gap-3">
+										<img
+											src={session.user.image}
+											alt=""
+											className="w-9 h-9 rounded-full shrink-0 border border-border/40"
+										/>
+										<div className="flex flex-col min-w-0 gap-0.5">
+											<span className="text-[12px] font-medium truncate leading-tight">
+												{session.user.name}
+											</span>
+											{gh?.login && (
+												<span className="text-[11px] font-mono text-muted-foreground truncate leading-tight">
+													{gh.login}
+												</span>
+											)}
+											{gh?.email && (
+												<span className="text-[10px] text-muted-foreground/50 truncate leading-tight">
+													{gh.email}
+												</span>
+											)}
+										</div>
 									</div>
+									{/* Stats */}
+									{gh && (
+										<div className="flex items-center gap-3 mt-2.5 pt-2 border-t border-border/40">
+											<span className="text-[10px] text-muted-foreground font-mono">
+												<span className="text-foreground/80 font-medium">{gh.followers ?? 0}</span> followers
+											</span>
+											<span className="text-[10px] text-muted-foreground font-mono">
+												<span className="text-foreground/80 font-medium">{gh.following ?? 0}</span> following
+											</span>
+											<span className="text-[10px] text-muted-foreground font-mono">
+												<span className="text-foreground/80 font-medium">{gh.public_repos ?? 0}</span> repos
+											</span>
+										</div>
+									)}
 								</div>
-								<DropdownMenuSeparator />
 
-								<DropdownMenuItem
-									onClick={() =>
-										window.dispatchEvent(
-											new CustomEvent(
-												"open-cmdk-mode",
-												{
-													detail: "search",
-												},
-											),
-										)
-									}
-									className="text-[11px] gap-2 h-7"
-								>
-									<Search className="w-3.5 h-3.5" />
-									Search repos
-								</DropdownMenuItem>
+								<DropdownMenuSeparator className="my-0" />
 
-								{session.githubUser?.login && (
+								{/* Navigation */}
+								<DropdownMenuGroup className="p-1">
+									<DropdownMenuLabel className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50 px-2 py-1">
+										Navigation
+									</DropdownMenuLabel>
+									{gh?.login && (
+										<DropdownMenuItem asChild className="text-[11px] gap-2 h-7">
+											<Link href={`/${gh.login}`}>
+												<User className="w-3.5 h-3.5" />
+												Your profile
+											</Link>
+										</DropdownMenuItem>
+									)}
+									<DropdownMenuItem asChild className="text-[11px] gap-2 h-7">
+										<Link href="/notifications">
+											<Bell className="w-3.5 h-3.5" />
+											Notifications
+										</Link>
+									</DropdownMenuItem>
 									<DropdownMenuItem
 										onClick={() =>
-											window.open(
-												`https://github.com/${session.githubUser.login}`,
-												"_blank",
+											window.dispatchEvent(
+												new CustomEvent("open-cmdk-mode", {
+													detail: "search",
+												}),
 											)
 										}
 										className="text-[11px] gap-2 h-7"
 									>
-										<ExternalLink className="w-3.5 h-3.5" />
-										GitHub profile
+										<Search className="w-3.5 h-3.5" />
+										Search repos
+										<DropdownMenuShortcut className="flex items-center gap-0.5 text-[10px] font-mono">
+											<Command className="w-2.5 h-2.5" />K
+										</DropdownMenuShortcut>
 									</DropdownMenuItem>
-								)}
+								</DropdownMenuGroup>
 
-								<DropdownMenuSeparator />
+								<DropdownMenuSeparator className="my-0" />
 
-								<DropdownMenuItem
-									onClick={() =>
-										signOut({
-											fetchOptions:
-												{
+								{/* Preferences */}
+								<DropdownMenuGroup className="p-1">
+									<DropdownMenuLabel className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50 px-2 py-1">
+										Preferences
+									</DropdownMenuLabel>
+									<DropdownMenuItem
+										onClick={(e) => toggleMode(e)}
+										className="text-[11px] gap-2 h-7"
+									>
+										{mode === "dark" ? (
+											<Sun className="w-3.5 h-3.5" />
+										) : (
+											<Moon className="w-3.5 h-3.5" />
+										)}
+										{mode === "dark" ? "Light mode" : "Dark mode"}
+									</DropdownMenuItem>
+									{gh?.login && (
+										<DropdownMenuItem
+											onClick={() =>
+												window.open(
+													`https://github.com/${gh.login}`,
+													"_blank",
+												)
+											}
+											className="text-[11px] gap-2 h-7"
+										>
+											<ExternalLink className="w-3.5 h-3.5" />
+											GitHub profile
+										</DropdownMenuItem>
+									)}
+								</DropdownMenuGroup>
+
+								<DropdownMenuSeparator className="my-0" />
+
+								{/* Sign out */}
+								<div className="p-1">
+									<DropdownMenuItem
+										onClick={() =>
+											signOut({
+												fetchOptions: {
 													onSuccess: () => {
-														window.location.href =
-															"/";
+														window.location.href = "/";
 													},
 												},
-										})
-									}
-									className="text-[11px] gap-2 h-7 text-destructive focus:text-destructive"
-								>
-									<LogOut className="w-3.5 h-3.5" />
-									Sign out
-								</DropdownMenuItem>
+											})
+										}
+										className="text-[11px] gap-2 h-7 text-destructive focus:text-destructive"
+									>
+										<LogOut className="w-3.5 h-3.5" />
+										Sign out
+									</DropdownMenuItem>
+								</div>
 							</DropdownMenuContent>
 						</DropdownMenu>
 					)}

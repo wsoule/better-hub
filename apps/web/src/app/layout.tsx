@@ -75,7 +75,8 @@ export default function RootLayout({
 				<QueryProvider>
 					<ThemeProvider
 						attribute="class"
-						defaultTheme="dark"
+						defaultTheme="system"
+						enableSystem
 						enableColorScheme={false}
 					>
 						{children}

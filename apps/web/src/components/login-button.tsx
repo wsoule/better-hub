@@ -1,7 +1,110 @@
 "use client";
 
 import { signIn } from "@/lib/auth-client";
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
+
+/* ── Scope groups ── */
+
+interface ScopeGroup {
+	id: string;
+	label: string;
+	description: string;
+	reason: string;
+	scopes: string[];
+	required?: boolean;
+	defaultOn?: boolean;
+}
+
+const SCOPE_GROUPS: ScopeGroup[] = [
+	{
+		id: "profile",
+		label: "Profile & email",
+		description: "Account info, email, and follow",
+		reason: "Required to create your account and display your profile.",
+		scopes: ["user", "user:email", "user:follow"],
+		required: true,
+	},
+	{
+		id: "repos",
+		label: "Repositories",
+		description: "Full access to public and private repos",
+		reason: "Lets you browse, edit, and manage repositories including statuses and deployments.",
+		scopes: ["repo", "repo:status", "repo_deployment", "public_repo"],
+		required: true,
+	},
+	{
+		id: "orgs",
+		label: "Organizations",
+		description: "Manage org memberships",
+		reason: "Lets you see and switch between your organizations and their repositories.",
+		scopes: ["admin:org", "write:org", "read:org"],
+		defaultOn: true,
+	},
+	{
+		id: "notifications",
+		label: "Notifications",
+		description: "Access your notifications",
+		reason: "Lets you view and manage your GitHub notifications directly in the app.",
+		scopes: ["notifications"],
+		defaultOn: true,
+	},
+	{
+		id: "workflow",
+		label: "Actions & workflows",
+		description: "CI/CD and workflow runs",
+		reason: "Lets you view CI/CD status and trigger workflow runs from the app.",
+		scopes: ["workflow"],
+		defaultOn: true,
+	},
+	{
+		id: "projects",
+		label: "Projects",
+		description: "Read & write project boards",
+		reason: "Lets you view and manage GitHub Projects linked to your repositories.",
+		scopes: ["read:project", "write:project"],
+		defaultOn: true,
+	},
+	{
+		id: "discussions",
+		label: "Discussions",
+		description: "Read & write discussions",
+		reason: "Lets you participate in repository and organization discussions.",
+		scopes: ["write:discussion", "read:discussion"],
+		defaultOn: true,
+	},
+	{
+		id: "security",
+		label: "Security",
+		description: "Security events and audit logs",
+		reason: "Lets you view security alerts, Dependabot findings, and audit logs.",
+		scopes: ["security_events", "read:audit_log"],
+		defaultOn: true,
+	},
+	{
+		id: "gpg",
+		label: "GPG keys",
+		description: "Manage GPG signing keys",
+		reason: "Lets you manage GPG keys used for commit signature verification.",
+		scopes: ["admin:gpg_key", "write:gpg_key", "read:gpg_key"],
+	},
+	{
+		id: "webhooks",
+		label: "Webhooks",
+		description: "Manage repo and org webhooks",
+		reason: "Enables real-time live updates when PRs, issues, or pushes happen on your repos.",
+		scopes: ["admin:repo_hook", "write:repo_hook", "read:repo_hook", "admin:org_hook"],
+	},
+	{
+		id: "gists",
+		label: "Gists",
+		description: "Create and read gists",
+		reason: "Lets you create, view, and manage your GitHub Gists.",
+		scopes: ["gist"],
+	},
+];
+
+/* ── Icons ── */
 
 function GithubIcon({ className }: { className?: string }) {
 	return (
@@ -70,28 +173,207 @@ function LoadingSpinner({ className }: { className?: string }) {
 	);
 }
 
-export function LoginButton() {
-	const [loading, setLoading] = useState(false);
+function CheckIcon({ className }: { className?: string }) {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2.5"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			className={className}
+		>
+			<polyline points="20 6 9 17 4 12" />
+		</svg>
+	);
+}
+
+function LockIcon({ className }: { className?: string }) {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			className={className}
+		>
+			<rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+			<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+		</svg>
+	);
+}
+
+function InfoIcon({ className }: { className?: string }) {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			className={className}
+		>
+			<circle cx="12" cy="12" r="10" />
+			<path d="M12 16v-4" />
+			<path d="M12 8h.01" />
+		</svg>
+	);
+}
+
+function InfoPopover({ text, children }: { text: string; children: React.ReactNode }) {
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+	const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+	const show = useCallback(() => {
+		clearTimeout(timeout.current);
+		setOpen(true);
+	}, []);
+
+	const hide = useCallback(() => {
+		timeout.current = setTimeout(() => setOpen(false), 150);
+	}, []);
+
+	useEffect(() => () => clearTimeout(timeout.current), []);
 
 	return (
-		<button
-			onClick={() => {
-				setLoading(true);
-				signIn.social({
-					provider: "github",
-					callbackURL: "/dashboard",
-				});
-			}}
-			disabled={loading}
-			className="w-full flex items-center justify-center gap-3 bg-foreground text-background font-medium py-3 px-6 rounded-md text-sm hover:bg-foreground/90 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+		<div
+			ref={ref}
+			className="relative inline-flex"
+			onMouseEnter={show}
+			onMouseLeave={hide}
 		>
-			{loading ? (
-				<LoadingSpinner className="w-4 h-4" />
-			) : (
-				<GithubIcon className="w-4 h-4" />
+			{children}
+			{open && (
+				<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 px-3 py-2 rounded-md bg-foreground text-background text-[11px] leading-relaxed shadow-lg z-50 pointer-events-none">
+					{text}
+					<div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-foreground" />
+				</div>
 			)}
-			{loading ? "Redirecting..." : "Continue with GitHub"}
-			{!loading && <ArrowRightIcon className="w-3.5 h-3.5 ml-auto" />}
-		</button>
+		</div>
+	);
+}
+
+/* ── Component ── */
+
+export function LoginButton() {
+	const [loading, setLoading] = useState(false);
+	const [selected, setSelected] = useState<Set<string>>(() => {
+		const initial = new Set<string>();
+		for (const g of SCOPE_GROUPS) {
+			if (g.required || g.defaultOn) initial.add(g.id);
+		}
+		return initial;
+	});
+
+	function toggle(id: string) {
+		const group = SCOPE_GROUPS.find((g) => g.id === id);
+		if (group?.required) return;
+		setSelected((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	}
+
+	function handleSignIn() {
+		setLoading(true);
+		const scopes: string[] = [];
+		for (const g of SCOPE_GROUPS) {
+			if (selected.has(g.id)) scopes.push(...g.scopes);
+		}
+		signIn.social({
+			provider: "github",
+			callbackURL: "/dashboard",
+			scopes,
+		});
+	}
+
+	return (
+		<div className="space-y-4">
+			{/* Scope picker — compact wrapped pills */}
+			<div>
+				<p className="text-[11px] font-mono uppercase tracking-wider text-foreground/40 mb-1.5">
+					Permissions
+				</p>
+				<p className="text-[11px] text-foreground/30 mb-2.5">
+					Click to toggle optional permissions. Hover the{" "}
+					<InfoIcon className="inline w-3 h-3 -mt-px" /> to learn why
+					each is needed.
+				</p>
+				<div className="flex flex-wrap gap-1.5">
+					{SCOPE_GROUPS.map((group) => {
+						const isOn = selected.has(group.id);
+						return (
+							<span
+								key={group.id}
+								className={cn(
+									"inline-flex items-stretch rounded-full border text-[12px] transition-colors",
+									isOn
+										? "border-foreground/30 bg-foreground/10 text-foreground"
+										: "border-foreground/10 text-foreground/40",
+								)}
+							>
+								<button
+									type="button"
+									onClick={() => toggle(group.id)}
+									disabled={group.required}
+									className={cn(
+										"inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 transition-colors",
+										!isOn && "line-through decoration-foreground/20",
+										group.required
+											? "cursor-default"
+											: "cursor-pointer hover:text-foreground/70",
+									)}
+								>
+									{isOn &&
+										(group.required ? (
+											<LockIcon className="w-2.5 h-2.5 shrink-0" />
+										) : (
+											<CheckIcon className="w-2.5 h-2.5 shrink-0" />
+										))}
+									{group.label}
+								</button>
+								<InfoPopover text={group.reason}>
+									<span
+										className={cn(
+											"inline-flex items-center pr-2 pl-1 border-l transition-colors",
+											isOn
+												? "border-foreground/15 text-foreground/30 hover:text-foreground/60"
+												: "border-foreground/10 text-foreground/20 hover:text-foreground/50",
+										)}
+									>
+										<InfoIcon className="w-3 h-3" />
+									</span>
+								</InfoPopover>
+							</span>
+						);
+					})}
+				</div>
+			</div>
+
+			{/* Sign in button */}
+			<button
+				onClick={handleSignIn}
+				disabled={loading}
+				className="w-full flex items-center justify-center gap-3 bg-foreground text-background font-medium py-3 px-6 rounded-md text-sm hover:bg-foreground/90 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+			>
+				{loading ? (
+					<LoadingSpinner className="w-4 h-4" />
+				) : (
+					<GithubIcon className="w-4 h-4" />
+				)}
+				{loading ? "Redirecting..." : "Continue with GitHub"}
+				{!loading && <ArrowRightIcon className="w-3.5 h-3.5 ml-auto" />}
+			</button>
+		</div>
 	);
 }

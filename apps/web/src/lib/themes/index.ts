@@ -4,7 +4,11 @@ import { midnight, hubLight, hubDark, ember, arctic, dawn } from "./themes";
 export type { ThemeColors, ThemeDefinition };
 
 export const STORAGE_KEY = "color-theme";
+export const DARK_THEME_KEY = "dark-theme";
+export const LIGHT_THEME_KEY = "light-theme";
 export const DEFAULT_THEME_ID = "midnight";
+export const DARK_THEME_ID = "midnight";
+export const LIGHT_THEME_ID = "hub-light";
 
 const themes: ThemeDefinition[] = [midnight, hubDark, hubLight, ember, arctic, dawn];
 
@@ -12,6 +16,14 @@ const themeMap = new Map(themes.map((t) => [t.id, t]));
 
 export function listThemes(): ThemeDefinition[] {
 	return themes;
+}
+
+export function listDarkThemes(): ThemeDefinition[] {
+	return themes.filter((t) => t.mode === "dark");
+}
+
+export function listLightThemes(): ThemeDefinition[] {
+	return themes.filter((t) => t.mode === "light");
 }
 
 export function getTheme(id: string): ThemeDefinition | undefined {

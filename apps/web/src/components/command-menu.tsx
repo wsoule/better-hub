@@ -130,6 +130,10 @@ export function CommandMenu() {
 		colorTheme,
 		setColorTheme,
 		themes: colorThemes,
+		darkThemes: colorDarkThemes,
+		lightThemes: colorLightThemes,
+		darkThemeId,
+		lightThemeId,
 		mode: _colorMode,
 	} = useColorTheme();
 	const { codeThemeDark, codeThemeLight, setCodeThemeDark, setCodeThemeLight } =
@@ -1098,16 +1102,32 @@ export function CommandMenu() {
 	}, [search, topUserRepos, filteredUserRepos, dedupedGithubResults, router]);
 
 	// --- Theme mode items ---
-	const filteredThemes = useMemo(() => {
-		if (mode !== "theme") return colorThemes;
-		if (!search.trim()) return colorThemes;
+	const filteredDarkThemes = useMemo(() => {
+		if (mode !== "theme") return colorDarkThemes;
+		if (!search.trim()) return colorDarkThemes;
 		const s = search.toLowerCase();
-		return colorThemes.filter(
+		return colorDarkThemes.filter(
 			(t) =>
 				t.name.toLowerCase().includes(s) ||
 				t.description.toLowerCase().includes(s),
 		);
-	}, [mode, search, colorThemes]);
+	}, [mode, search, colorDarkThemes]);
+
+	const filteredLightThemes = useMemo(() => {
+		if (mode !== "theme") return colorLightThemes;
+		if (!search.trim()) return colorLightThemes;
+		const s = search.toLowerCase();
+		return colorLightThemes.filter(
+			(t) =>
+				t.name.toLowerCase().includes(s) ||
+				t.description.toLowerCase().includes(s),
+		);
+	}, [mode, search, colorLightThemes]);
+
+	const filteredThemes = useMemo(
+		() => [...filteredDarkThemes, ...filteredLightThemes],
+		[filteredDarkThemes, filteredLightThemes],
+	);
 
 	const themeItems = useMemo(() => {
 		return filteredThemes.map((t) => ({
@@ -2072,74 +2092,82 @@ export function CommandMenu() {
 								) : mode === "theme" ? (
 									/* Theme mode */
 									<>
-										<CommandGroup title="Color Themes">
-											{filteredThemes.map(
-												(
-													theme,
-												) => {
-													const idx =
-														getNextIndex();
-													const isActive =
-														colorTheme ===
-														theme.id;
-													return (
-														<CommandItemButton
-															key={
-																theme.id
-															}
-															index={
-																idx
-															}
-															selected={
-																selectedIndex ===
-																idx
-															}
-															onClick={() =>
-																setColorTheme(
-																	theme.id,
-																)
-															}
-														>
-															<span className="flex items-center gap-1 shrink-0">
-																<span
-																	className="w-3 h-3 rounded-full border border-border/40"
-																	style={{
-																		backgroundColor:
-																			theme.bgPreview,
-																	}}
-																/>
-																<span
-																	className="w-3 h-3 rounded-full border border-border/40"
-																	style={{
-																		backgroundColor:
-																			theme.accentPreview,
-																	}}
-																/>
-															</span>
-															<span className="text-[13px] text-foreground flex-1">
-																{
-																	theme.name
-																}
-															</span>
-															<span className="text-[11px] text-muted-foreground/40 hidden sm:block">
-																{theme.mode ===
-																"dark" ? (
-																	<Moon className="inline size-2.5 mr-1" />
-																) : (
-																	<Sun className="inline size-2.5 mr-1" />
+										{filteredDarkThemes.length > 0 && (
+											<CommandGroup title="Dark Themes">
+												{filteredDarkThemes.map(
+													(theme) => {
+														const idx = getNextIndex();
+														const isActive = darkThemeId === theme.id;
+														return (
+															<CommandItemButton
+																key={theme.id}
+																index={idx}
+																selected={selectedIndex === idx}
+																onClick={() => setColorTheme(theme.id)}
+															>
+																<span className="flex items-center gap-1 shrink-0">
+																	<span
+																		className="w-3 h-3 rounded-full border border-border/40"
+																		style={{ backgroundColor: theme.bgPreview }}
+																	/>
+																	<span
+																		className="w-3 h-3 rounded-full border border-border/40"
+																		style={{ backgroundColor: theme.accentPreview }}
+																	/>
+																</span>
+																<span className="text-[13px] text-foreground flex-1">
+																	{theme.name}
+																</span>
+																<span className="text-[11px] text-muted-foreground/40 hidden sm:block">
+																	{theme.description}
+																</span>
+																{isActive && (
+																	<Check className="size-3.5 text-success shrink-0" />
 																)}
-																{
-																	theme.description
-																}
-															</span>
-															{isActive && (
-																<Check className="size-3.5 text-success shrink-0" />
-															)}
-														</CommandItemButton>
-													);
-												},
-											)}
-										</CommandGroup>
+															</CommandItemButton>
+														);
+													},
+												)}
+											</CommandGroup>
+										)}
+										{filteredLightThemes.length > 0 && (
+											<CommandGroup title="Light Themes">
+												{filteredLightThemes.map(
+													(theme) => {
+														const idx = getNextIndex();
+														const isActive = lightThemeId === theme.id;
+														return (
+															<CommandItemButton
+																key={theme.id}
+																index={idx}
+																selected={selectedIndex === idx}
+																onClick={() => setColorTheme(theme.id)}
+															>
+																<span className="flex items-center gap-1 shrink-0">
+																	<span
+																		className="w-3 h-3 rounded-full border border-border/40"
+																		style={{ backgroundColor: theme.bgPreview }}
+																	/>
+																	<span
+																		className="w-3 h-3 rounded-full border border-border/40"
+																		style={{ backgroundColor: theme.accentPreview }}
+																	/>
+																</span>
+																<span className="text-[13px] text-foreground flex-1">
+																	{theme.name}
+																</span>
+																<span className="text-[11px] text-muted-foreground/40 hidden sm:block">
+																	{theme.description}
+																</span>
+																{isActive && (
+																	<Check className="size-3.5 text-success shrink-0" />
+																)}
+															</CommandItemButton>
+														);
+													},
+												)}
+											</CommandGroup>
+										)}
 										{hasQuery &&
 											filteredThemes.length ===
 												0 && (
@@ -2813,7 +2841,7 @@ export function CommandMenu() {
 																	colorTheme,
 															)
 																?.name ??
-																colorTheme}
+																"Theme"}
 														</span>
 														<ChevronRight className="size-3 text-muted-foreground/30 shrink-0" />
 													</CommandItemButton>

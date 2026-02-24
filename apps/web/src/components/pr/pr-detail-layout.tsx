@@ -88,6 +88,43 @@ export function PRDetailLayout({
 	const handleRestoreChat = () => persistSplit(65);
 	const handleRestoreCode = () => persistSplit(65);
 
+	// Keyboard shortcuts: 1/[ = files, 2/] = chat
+	useEffect(() => {
+		function handleKeyDown(e: KeyboardEvent) {
+			// Skip when user is typing in an input/textarea/contenteditable
+			const tag = (e.target as HTMLElement)?.tagName;
+			if (
+				tag === "INPUT" ||
+				tag === "TEXTAREA" ||
+				(e.target as HTMLElement)?.isContentEditable
+			)
+				return;
+
+			const isDesktop = window.innerWidth >= 1024;
+
+			if (e.key === "1" || e.key === "[") {
+				e.preventDefault();
+				if (isDesktop) {
+					if (codeCollapsed) persistSplit(65);
+					else persistSplit(100);
+				} else {
+					setMobileTab("diff");
+				}
+			} else if (e.key === "2" || e.key === "]") {
+				e.preventDefault();
+				if (isDesktop) {
+					if (chatCollapsed) persistSplit(65);
+					else persistSplit(0);
+				} else {
+					setMobileTab("chat");
+				}
+			}
+		}
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [codeCollapsed, chatCollapsed, persistSplit]);
+
 	// Full-width conflict resolver mode
 	if (conflictPanel) {
 		return (

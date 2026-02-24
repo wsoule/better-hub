@@ -128,9 +128,9 @@ export default async function HomePage() {
 						className="hero-in text-[11px] text-foreground/40 mt-3"
 						style={{ animationDelay: "1.2s" }}
 					>
-						We&apos;ll request access to read and write to your
-						repositories and other resources. Your access token
-						is encrypted and stored securely.
+						Only the permissions you select above will be
+						requested. Your access token is encrypted and stored
+						securely.
 					</p>
 				</div>
 			</div>
