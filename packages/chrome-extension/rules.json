@@ -79,6 +79,15 @@
 		}
 	},
 	{
+		"id": 25,
+		"priority": 5,
+		"action": { "type": "allow" },
+		"condition": {
+			"regexFilter": "^https://github\\.com/[^/]+/[^/]+/settings",
+			"resourceTypes": ["main_frame"]
+		}
+	},
+	{
 		"id": 12,
 		"priority": 5,
 		"action": { "type": "allow" },

@@ -133,6 +133,17 @@ function buildRules(host) {
 			},
 		})),
 
+		// --- Allow repo-level settings (github.com/:owner/:repo/settings) ---
+		{
+			id: 250,
+			priority: 5,
+			action: { type: "allow" },
+			condition: {
+				regexFilter: "^https://github\\.com/[^/]+/[^/]+/settings",
+				resourceTypes: ["main_frame"],
+			},
+		},
+
 		// --- Specific path rewrites ---
 		{
 			id: 101,

@@ -946,7 +946,7 @@ export function RepoOverview({
 	const base = `/${owner}/${repo}`;
 	const branch = defaultBranch ?? "main";
 
-	const { data: openPRs = [] } = useQuery({
+	const { data: openPRs = [], isFetched: prsFetched } = useQuery({
 		queryKey: ["overview-prs", owner, repo],
 		queryFn: () => fetchOverviewPRs(owner, repo),
 		initialData: initialPRs ?? undefined,
@@ -955,7 +955,7 @@ export function RepoOverview({
 		gcTime: 10 * 60 * 1000,
 	});
 
-	const { data: openIssues = [] } = useQuery({
+	const { data: openIssues = [], isFetched: issuesFetched } = useQuery({
 		queryKey: ["overview-issues", owner, repo],
 		queryFn: () => fetchOverviewIssues(owner, repo),
 		initialData: initialIssues ?? undefined,
@@ -973,7 +973,7 @@ export function RepoOverview({
 		gcTime: 10 * 60 * 1000,
 	});
 
-	const { data: repoEvents } = useQuery({
+	const { data: repoEvents, isFetched: eventsFetched } = useQuery({
 		queryKey: ["overview-events", owner, repo],
 		queryFn: () => fetchOverviewEvents(owner, repo),
 		initialData: initialEvents ?? undefined,
@@ -999,6 +999,10 @@ export function RepoOverview({
 		staleTime: 5 * 60 * 1000,
 		gcTime: 10 * 60 * 1000,
 	});
+
+	// True when we have initialData OR the queries have finished fetching
+	const hasInitialData = !!(initialPRs || initialIssues || initialEvents);
+	const dataReady = hasInitialData || (prsFetched && issuesFetched && eventsFetched);
 
 	const [previewPublic, setPreviewPublic] = useState(false);
 
@@ -1084,42 +1088,61 @@ export function RepoOverview({
 					)}
 				</div>
 
-				<div
-					className={cn(
-						"grid grid-cols-1 gap-4 lg:flex-1 lg:min-h-0 lg:grid-rows-1",
-						openIssues.length > 0
-							? "lg:grid-cols-3"
-							: "lg:grid-cols-2",
-					)}
-				>
-					<ActivityFeed
-						repoEvents={repoEvents ?? []}
-						commitActivity={commitActivity}
-						base={base}
-					/>
-
-					<SortableList
-						title="Open PRs"
-						totalCount={openPRCount ?? openPRs.length}
-						items={openPRs}
-						type="pr"
-						base={base}
-						viewAllHref={`${base}/pulls`}
-					/>
-
-					{openIssues.length > 0 && (
-						<SortableList
-							title="Open Issues"
-							totalCount={
-								openIssueCount ?? openIssues.length
-							}
-							items={openIssues}
-							type="issue"
+				{dataReady ? (
+					<div
+						className={cn(
+							"grid grid-cols-1 gap-4 lg:flex-1 lg:min-h-0 lg:grid-rows-1",
+							openIssues.length > 0
+								? "lg:grid-cols-3"
+								: "lg:grid-cols-2",
+						)}
+					>
+						<ActivityFeed
+							repoEvents={repoEvents ?? []}
+							commitActivity={commitActivity}
 							base={base}
-							viewAllHref={`${base}/issues`}
 						/>
-					)}
-				</div>
+
+						<SortableList
+							title="Open PRs"
+							totalCount={openPRCount ?? openPRs.length}
+							items={openPRs}
+							type="pr"
+							base={base}
+							viewAllHref={`${base}/pulls`}
+						/>
+
+						{openIssues.length > 0 && (
+							<SortableList
+								title="Open Issues"
+								totalCount={
+									openIssueCount ?? openIssues.length
+								}
+								items={openIssues}
+								type="issue"
+								base={base}
+								viewAllHref={`${base}/issues`}
+							/>
+						)}
+					</div>
+				) : (
+					<div className="grid grid-cols-1 gap-4 lg:flex-1 lg:min-h-0 lg:grid-rows-1 lg:grid-cols-2">
+						{[0, 1].map((i) => (
+							<div
+								key={i}
+								className="rounded-lg border border-border/30 p-4 space-y-3"
+							>
+								<div className="h-3 w-24 rounded bg-muted/40 animate-pulse" />
+								{[0, 1, 2].map((j) => (
+									<div key={j} className="flex items-center gap-2">
+										<div className="h-2.5 w-2.5 rounded-full bg-muted/30 animate-pulse" />
+										<div className="h-2.5 rounded bg-muted/30 animate-pulse" style={{ width: `${55 + j * 15}%` }} />
+									</div>
+								))}
+							</div>
+						))}
+					</div>
+				)}
 				<button
 					type="button"
 					onClick={() => setPreviewPublic(true)}

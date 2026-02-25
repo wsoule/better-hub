@@ -7,6 +7,7 @@ import {
 	AlertTriangle,
 	Archive,
 	ChevronDown,
+	ExternalLink,
 	Eye,
 	EyeOff,
 	GitBranch,
@@ -582,6 +583,37 @@ export function RepoSettings({
 				/>
 			</SectionCard>
 
+			{/* ── Social Preview (public repos only) ── */}
+			{!repoData.private && (
+				<SectionCard dashed>
+					<div className="flex items-center gap-4">
+						<div className="w-32 shrink-0 rounded border border-border/25 overflow-hidden bg-muted/20 dark:bg-white/[0.015]">
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img
+								src={`https://opengraph.githubassets.com/1/${owner}/${repo}`}
+								alt={`Social preview for ${owner}/${repo}`}
+								className="w-full aspect-[2/1] object-cover"
+							/>
+						</div>
+						<div className="min-w-0 flex-1">
+							<p className="text-xs font-medium text-foreground/85">Social Preview</p>
+							<p className="text-[10px] text-muted-foreground/40 mt-0.5">
+								Customize the image shown when shared on social media
+							</p>
+							<a
+								href={`https://github.com/${owner}/${repo}/settings`}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center gap-1 mt-2 text-[11px] text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+							>
+								<ExternalLink className="w-3 h-3" />
+								Edit on GitHub
+							</a>
+						</div>
+					</div>
+				</SectionCard>
+			)}
+
 			{/* ── Topics ── */}
 			<SectionCard dashed>
 				<SectionHeader
@@ -862,26 +894,28 @@ export function RepoSettings({
 								</code>{" "}
 								to confirm
 							</label>
-							<input
-								type="text"
-								value={deleteConfirmName}
-								onChange={(e) => setDeleteConfirmName(e.target.value)}
-								placeholder={`${owner}/${repo}`}
-								className="w-full max-w-sm bg-transparent border border-border/30 rounded-md px-3 py-2 text-xs font-mono focus:border-destructive/30 focus:outline-none transition-colors placeholder:text-muted-foreground/15"
-							/>
-							<button
-								onClick={handleDelete}
-								disabled={deleteConfirmName !== `${owner}/${repo}` || dangerPending}
-								className={cn(
-									"inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer",
-									deleteConfirmName === `${owner}/${repo}`
-										? "border-destructive bg-destructive text-white hover:bg-destructive/90 active:scale-[0.98]"
-										: "bg-muted/30 border-border/30 text-muted-foreground/20 cursor-not-allowed",
-								)}
-							>
-								<Trash2 className="w-3 h-3" />
-								Delete this repository
-							</button>
+							<div className="flex items-center gap-2 max-w-lg">
+								<input
+									type="text"
+									value={deleteConfirmName}
+									onChange={(e) => setDeleteConfirmName(e.target.value)}
+									placeholder={`${owner}/${repo}`}
+									className="flex-1 min-w-0 bg-transparent border border-border/30 rounded-md px-3 py-1.5 text-xs font-mono focus:border-destructive/30 focus:outline-none transition-colors placeholder:text-muted-foreground/15"
+								/>
+								<button
+									onClick={handleDelete}
+									disabled={deleteConfirmName !== `${owner}/${repo}` || dangerPending}
+									className={cn(
+										"inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer whitespace-nowrap shrink-0",
+										deleteConfirmName === `${owner}/${repo}`
+											? "border-destructive bg-destructive text-white hover:bg-destructive/90 active:scale-[0.98]"
+											: "bg-muted/30 border-border/30 text-muted-foreground/20 cursor-not-allowed",
+									)}
+								>
+									<Trash2 className="w-3 h-3" />
+									Delete this repository
+								</button>
+							</div>
 						</div>
 					</div>
 
